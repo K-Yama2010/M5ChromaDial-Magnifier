@@ -128,7 +128,7 @@ void displayTask(void *pvParameters) {
 }
 
 void setup() {
-    M5Dial.begin(true, false); // RFIDを無効化してGPIO13の競合を完全に回避
+    M5Dial.begin(true, false); // RFIDを無効化してGPIO13の競合を回避
     
     // ミューテックス（排他制御）の作成
     xMutex = xSemaphoreCreateMutex();
@@ -161,7 +161,7 @@ void setup() {
     xTaskCreatePinnedToCore(displayTask, "DisplayTask", 8192, NULL, 1, NULL, 0);
 }
 
-// === Core 1 メインループ（入力監視とLED制御だけを爆速で行う） ===
+// === Core 1 メインループ（入力監視とLED制御だけを行う） ===
 void loop() {
     M5Dial.update();
 
@@ -175,7 +175,7 @@ void loop() {
         xSemaphoreGive(xMutex);
     }
 
-    // タッチパネルによる色選択（画面描画を待たないため指に完全追従）
+    // タッチパネルによる色選択
     auto t = M5Dial.Touch.getDetail();
     if (t.isPressed()) {
         float dx = t.x - 120.0f;
@@ -192,7 +192,7 @@ void loop() {
         xSemaphoreGive(xMutex);
     }
 
-    // ダイヤル回転の読み取り（画面描画を待たないため絶対に取りこぼさない）
+    // ダイヤル回転の読み取り
     long newPosition = M5Dial.Encoder.read();
     long delta = newPosition - oldPosition;
     oldPosition = newPosition;
@@ -242,6 +242,6 @@ void loop() {
     }
     FastLED.show();
 
-    // Core 1のループ適度なウェイト（入力検知とLED更新を約200fpsでぶん回す）
+    // Core 1のループ適度なウェイト（入力検知とLED更新を高速で回す）
     delay(5);
 }
